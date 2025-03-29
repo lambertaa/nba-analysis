@@ -23,8 +23,8 @@ class PlayerSeasonRequester:
         self.rows = []
         self.player_info_url = "http://stats.nba.com/stats/leaguedashplayerstats"
 
-    def populate_season(self, season_id, per_mode="PerGame"):
-        params = self.build_params(season_id, per_mode)
+    def populate_season(self, season_id, per_mode="PerGame", **kwargs):
+        params = self.build_params(season_id, per_mode, **kwargs)
         # Encode without safe '+', apparently the NBA likes unsafe url params.
         params_str = urllib.parse.urlencode(params, safe=":+")
         response = requests.get(
@@ -35,7 +35,9 @@ class PlayerSeasonRequester:
         self.df = df
         # return df
 
-    def build_params(self, season_id, per_mode="PerGame"):
+    def build_params(
+        self, season_id, per_mode="PerGame", PlayerExperience="", MeasureType="base"
+    ):
         params = (
             ("College", ""),
             ("Conference", ""),
@@ -51,7 +53,7 @@ class PlayerSeasonRequester:
             ("LastNGames", "0"),
             ("LeagueID", "00"),
             ("Location", ""),
-            ("MeasureType", "Base"),
+            ("MeasureType", MeasureType),
             ("Month", "0"),
             ("OpponentTeamID", "0"),
             ("Outcome", ""),
@@ -59,7 +61,7 @@ class PlayerSeasonRequester:
             ("PaceAdjust", "N"),
             ("PerMode", per_mode),
             ("Period", "0"),
-            ("PlayerExperience", ""),
+            ("PlayerExperience", PlayerExperience),
             ("PlayerPosition", ""),
             ("PlusMinus", "N"),
             ("Rank", "N"),
