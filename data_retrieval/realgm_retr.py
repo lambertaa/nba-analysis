@@ -23,6 +23,8 @@ def get_realgm_allstar_roster(year: int) -> Union[pd.DataFrame, None]:
             year_df_list.append(pd.read_html(StringIO(str(table)))[0])
 
         df = pd.concat(year_df_list).reset_index(drop=True)
+        # remove duplicate rows based on Player
+        df = df.drop_duplicates(subset=["Player"])
         return df
     else:
         print(
@@ -36,6 +38,7 @@ def get_realgm_allstar_rosters(years: list[int]) -> Union[pd.DataFrame, None]:
     for year in years:
         roster = get_realgm_allstar_roster(year)
         if roster is not None:
+            roster["Year"] = year
             allstar_rosters.append(roster)
 
     # Concatenate all the dataframes into a single dataframe
