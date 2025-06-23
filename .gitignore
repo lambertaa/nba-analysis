@@ -4,3 +4,6 @@
 *.txt
 *.pyc
 *.pkl
+*.xlsx
+*.html
+*.pdf
