@@ -1,4 +1,6 @@
 import pandas as pd
+import argparse
+import sys
 
 url_format = "https://barttorvik.com/getadvstats.php?year={year}&csv=1"
 
@@ -112,3 +114,51 @@ def get_ncaa_player_data_for_years(years: list[int]) -> pd.DataFrame:
 
     combined_df = pd.concat(all_data, ignore_index=True)
     return combined_df
+
+
+if __name__ == "__main__":
+
+    parser = argparse.ArgumentParser(
+        description="Fetch NCAA player data from Bart Torvik's website."
+    )
+    subparsers = parser.add_subparsers(dest="command", help="Command to execute")
+
+    # Single year command
+    single_parser = subparsers.add_parser("single", help="Fetch data for a single year")
+    single_parser.add_argument("year", type=int, help="Year to fetch data for")
+
+    # Multiple years command
+    multi_parser = subparsers.add_parser("multi", help="Fetch data for multiple years")
+    multi_parser.add_argument(
+        "years", type=int, nargs="+", help="Years to fetch data for"
+    )
+
+    # Output options
+    parser.add_argument(
+        "-o", "--output", type=str, help="Output file path (CSV format)"
+    )
+
+    args = parser.parse_args()
+
+    try:
+        if args.command == "single":
+            df = get_ncaa_player_data(args.year)
+            print(f"Retrieved data for {args.year} with {len(df)} records")
+        elif args.command == "multi":
+            df = get_ncaa_player_data_for_years(args.years)
+            print(f"Retrieved data for years {args.years} with {len(df)} records")
+        else:
+            parser.print_help()
+            sys.exit(1)
+
+        if args.output:
+            df.to_csv(args.output, index=False)
+            print(f"Data saved to {args.output}")
+        else:
+            # Print sample of data to stdout
+            print("\nSample data (first 5 rows):")
+            print(df.head())
+
+    except ValueError as e:
+        print(f"Error: {e}")
+        sys.exit(1)
