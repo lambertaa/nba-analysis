@@ -20,63 +20,67 @@ PER_MODES = [
 
 class PlayerSeasonRequester:
     def __init__(self):
-        self.rows = []
-        self.player_info_url = "http://stats.nba.com/stats/leaguedashplayerstats"
+        self.df = pd.DataFrame()
+        self.player_info_url = "https://stats.nba.com/stats/leaguedashplayerstats"
 
     def populate_season(self, season_id, per_mode="PerGame", **kwargs):
         params = self.build_params(season_id, per_mode, **kwargs)
-        # Encode without safe '+', apparently the NBA likes unsafe url params.
-        params_str = urllib.parse.urlencode(params, safe=":+")
         response = requests.get(
-            url=self.player_info_url, headers=HEADERS, params=params_str
-        ).json()
-        df = pd.json_normalize(response, "resultSets")
-        df = pd.DataFrame(df["rowSet"][0], columns=df["headers"][0])
+            url=self.player_info_url,
+            headers=HEADERS,
+            params=params,
+            timeout=10,  # timeout prevents hanging
+        )
+        response.raise_for_status()  # good practice to catch HTTP errors
+        json_data = response.json()
+        df = pd.DataFrame(
+            json_data["resultSets"][0]["rowSet"],
+            columns=json_data["resultSets"][0]["headers"],
+        )
         self.df = df
-        # return df
+        return df
 
     def build_params(
-        self, season_id, per_mode="PerGame", PlayerExperience="", MeasureType="base"
+        self, season_id, per_mode="PerGame", PlayerExperience="", MeasureType="Base"
     ):
-        params = (
-            ("College", ""),
-            ("Conference", ""),
-            ("Country", ""),
-            ("DateFrom", ""),
-            ("DateTo", ""),
-            ("Division", ""),
-            ("DraftPick", ""),
-            ("DraftYear", ""),
-            ("GameScope", ""),
-            ("GameSegment", ""),
-            ("Height", ""),
-            ("LastNGames", "0"),
-            ("LeagueID", "00"),
-            ("Location", ""),
-            ("MeasureType", MeasureType),
-            ("Month", "0"),
-            ("OpponentTeamID", "0"),
-            ("Outcome", ""),
-            ("PORound", "0"),
-            ("PaceAdjust", "N"),
-            ("PerMode", per_mode),
-            ("Period", "0"),
-            ("PlayerExperience", PlayerExperience),
-            ("PlayerPosition", ""),
-            ("PlusMinus", "N"),
-            ("Rank", "N"),
-            ("Season", season_id),
-            ("SeasonSegment", ""),
-            ("SeasonType", "Regular Season"),
-            ("ShotClockRange", ""),
-            ("StarterBench", ""),
-            ("TeamID", "0"),
-            ("TwoWay", "0"),
-            ("VsConference", ""),
-            ("VsDivision", ""),
-            ("Weight", ""),
-        )
-        return params
+        return {
+            "College": "",
+            "Conference": "",
+            "Country": "",
+            "DateFrom": "",
+            "DateTo": "",
+            "Division": "",
+            "DraftPick": "",
+            "DraftYear": "",
+            "GameScope": "",
+            "GameSegment": "",
+            "Height": "",
+            "ISTRound": "",  # Include this; it's new for in-season tournament
+            "LastNGames": "0",
+            "LeagueID": "00",
+            "Location": "",
+            "MeasureType": MeasureType,
+            "Month": "0",
+            "OpponentTeamID": "0",
+            "Outcome": "",
+            "PORound": "0",
+            "PaceAdjust": "N",
+            "PerMode": per_mode,
+            "Period": "0",
+            "PlayerExperience": PlayerExperience,
+            "PlayerPosition": "",
+            "PlusMinus": "N",
+            "Rank": "N",
+            "Season": season_id,
+            "SeasonSegment": "",
+            "SeasonType": "Regular Season",  # or "Regular Season"
+            "ShotClockRange": "",
+            "StarterBench": "",
+            "TeamID": "0",
+            "VsConference": "",
+            "VsDivision": "",
+            "Weight": "",
+        }
 
 
 # class PlayerSeasonRequesterTotal(PlayerSeasonRequester):
