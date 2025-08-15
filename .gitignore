@@ -3,3 +3,7 @@
 *.png
 *.txt
 *.pyc
+*.pkl
+*.xlsx
+*.html
+*.pdf
