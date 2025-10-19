@@ -9,18 +9,18 @@ file_dir = os.path.dirname(os.path.realpath(__file__))
 class Lottery:
     def __init__(self):
         self._team_rank = {
-            "Yo Yo Ma": 3,
-            "Honey Badger": 9,
-            "Smitty Werbenjagermanjensen": 10,
-            "Steel Magnolias": 4,
-            "Big Flair Day": 11,
-            "Gwaggies": 2,
-            "BUZZSAW": 6,
+            "Yo Yo Ma": 1,
+            "Honey Badger": 6,
+            "Smitty Werbenjagermanjensen": 4,
+            "Steel Magnolias": 11,
+            "FRIDAY FRIDAY FRIDAY": 10,
+            "Gwaggies": 12,
+            "BUZZSAW": 3,
             "KingKong": 7,
-            "(IR)monstar": 12,
-            "Dumpster Fire": 1,
-            "Lupita and Los Santos": 8,
-            "Mitchell Don Got Me Jaded": 5,
+            "(IR)monstar": 8,
+            "Dumpster Fire": 5,
+            "Lupita and Los Santos": 2,
+            "Mitchell Don Got Me Jaded": 9,
         }
         self._team_rank = {
             k: v for k, v in sorted(self._team_rank.items(), key=lambda item: item[1])
@@ -108,7 +108,7 @@ def get_random_team():
 
     global lottery, winner_lbl
 
-    nsec = 1
+    nsec = choice(list(range(1,10)))
     # nsec = choice(list(range(3, 11)))
     start = time.time()
     while (time.time() - start) < nsec:
@@ -205,7 +205,7 @@ def display_image(team_name):
         image_label.image = photo  # Keep a reference to the image to prevent it from being garbage collected
     else:
         image = Image.open(
-            "D:/Andy/python/nba-analysis/nba_fantasy/profile_pics/please_wait.jpg"
+            "./profile_pics/please_wait.jpg"
         )
         resized_image = image.resize((200, 200), Image.LANCZOS)
 
