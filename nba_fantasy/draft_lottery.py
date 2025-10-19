@@ -88,7 +88,7 @@ class Lottery:
         for team in self._team_rank.keys():
             image_path = os.path.join(file_dir, f"profile_pics/{team}.jpg")
             image = Image.open(image_path)
-            resized_image = image.resize((200, 200), Image.ANTIALIAS)
+            resized_image = image.resize((200, 200), Image.LANCZOS)
             self.team_images[team] = resized_image
 
     def set_odds_to_zero(self, team_name):
@@ -169,19 +169,19 @@ def get_pick_clicked():
     display_image(selected_team)
 
     # Ask user if they want to keep the slot or choose an option to set odds to zero
-    if lottery.n_stats_picks < lottery.n_stats_picks_max:
-        response = messagebox.askyesno(
-            "Choose an Option",
-            f"Would you like to take the helper stats instead of picking a draft slot?",
-        )
+    # if lottery.n_stats_picks < lottery.n_stats_picks_max:
+    #     response = messagebox.askyesno(
+    #         "Choose an Option",
+    #         f"Would you like to take the helper stats instead of picking a draft slot?",
+    #     )
 
-        if response:  # User selected "Yes"
-            lottery.set_odds_to_zero(selected_team)
-            button.config(text="Get pick", state=NORMAL, cursor="hand2")
-            update_team_labels()
-            lottery.n_stats_picks += 1
-            lottery.stats_teams.append(selected_team)
-            return
+    #     if response:  # User selected "Yes"
+    #         lottery.set_odds_to_zero(selected_team)
+    #         button.config(text="Get pick", state=NORMAL, cursor="hand2")
+    #         update_team_labels()
+    #         lottery.n_stats_picks += 1
+    #         lottery.stats_teams.append(selected_team)
+    #         return
 
     update_team_labels()
 
@@ -207,7 +207,7 @@ def display_image(team_name):
         image = Image.open(
             "D:/Andy/python/nba-analysis/nba_fantasy/profile_pics/please_wait.jpg"
         )
-        resized_image = image.resize((200, 200), Image.ANTIALIAS)
+        resized_image = image.resize((200, 200), Image.LANCZOS)
 
         # Convert the resized image to a format that tkinter can display
         photo = ImageTk.PhotoImage(resized_image)
