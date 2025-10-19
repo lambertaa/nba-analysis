@@ -4,6 +4,7 @@
 !nba_fantasy/profile_pics/*.jpg
 !nba_fantasy/profile_pics/*.png
 *.txt
+!requirements.txt
 *.pyc
 *.pkl
 *.xlsx

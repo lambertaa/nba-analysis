@@ -1,0 +1,6 @@
+scikit-learn
+pandas
+nba-api
+ipykernel
+requests
+beautifulsoup4
