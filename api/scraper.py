@@ -126,28 +126,38 @@ def scrape_player_page(url: str) -> Dict[str, Any]:
         }
 
         # Extract strengths and weaknesses
-        # Look for sections with these headings
-        strengths_section = soup.find(
-            ["h3", "h4", "strong"], string=re.compile(r"Strengths?", re.I)
-        )
-        if strengths_section:
-            # Get text from following paragraph or div
-            strengths_text = extract_section_text(strengths_section)
-            data["Strengths"] = strengths_text
+        # Try multiple methods to find the scouting report text
 
-        weaknesses_section = soup.find(
-            ["h3", "h4", "strong"], string=re.compile(r"Weaknesses?", re.I)
+        # Method 1: Look for text containing "Strengths:" and "Weaknesses:"
+        page_text = soup.get_text()
+
+        # Find strengths
+        strengths_match = re.search(
+            r"Strengths?:\s*(.+?)(?=Weaknesses?:|Outlook:|$)",
+            page_text,
+            re.DOTALL | re.I,
         )
-        if weaknesses_section:
-            weaknesses_text = extract_section_text(weaknesses_section)
-            data["Weaknesses"] = weaknesses_text
+        if strengths_match:
+            data["Strengths"] = strengths_match.group(1).strip()
+
+        # Find weaknesses
+        weaknesses_match = re.search(
+            r"Weaknesses?:\s*(.+?)(?=Outlook:|Notes:|$)", page_text, re.DOTALL | re.I
+        )
+        if weaknesses_match:
+            data["Weaknesses"] = weaknesses_match.group(1).strip()
 
         # Extract numerical grades
         # Look for grade elements (this varies by nbadraft.net's current structure)
         grades = extract_grades(soup)
         data.update(grades)
 
+        # Log what was extracted
         logger.info(f"Successfully scraped scouting report from {url}")
+        logger.info(f"Extracted strengths length: {len(data['Strengths'])} chars")
+        logger.info(f"Extracted weaknesses length: {len(data['Weaknesses'])} chars")
+        logger.info(f"Extracted grades: {grades}")
+
         return data
 
     except Exception as e:
@@ -201,59 +211,59 @@ def extract_grades(soup: BeautifulSoup) -> Dict[str, Optional[float]]:
         "NBAReady": None,
     }
 
+    # Extract overall rating (same method as training script)
     try:
-        # nbadraft.net uses various structures for grades
-        # Try to find grade elements by common patterns
+        overall_div = soup.find("div", class_="overall")
+        if overall_div:
+            value_span = overall_div.find("span", class_="value")
+            if value_span:
+                grades["overall"] = float(value_span.text.strip())
+                logger.debug(f"Extracted overall: {grades['overall']}")
+    except (AttributeError, ValueError) as e:
+        logger.debug(f"Could not extract overall grade: {e}")
 
-        # Pattern 1: Look for grade bars or progress bars
-        grade_elements = soup.find_all(
-            ["div", "span"], class_=re.compile(r"grade|rating|score", re.I)
-        )
-
-        for element in grade_elements:
-            # Try to extract grade name and value
-            grade_text = element.get_text(strip=True)
-
-            # Look for patterns like "Athleticism: 85" or "Defense 7.5"
-            match = re.search(
-                r"(Athleticism|Size|Defense|Rebounding|Jump\s*Shot|NBA\s*Ready|Overall)[:\s]+(\d+\.?\d*)",
-                grade_text,
-                re.I,
+    # Extract attribute scores (same method as training script)
+    try:
+        player_attr_obj = soup.find("div", class_="player-attributes")
+        if player_attr_obj:
+            attr_values = player_attr_obj.find_all(
+                "div", class_="div-table-cell attribute-value"
+            )
+            attr_names = player_attr_obj.find_all(
+                "div", class_="div-table-cell attribute-name"
             )
 
-            if match:
-                grade_name = match.group(1).replace(" ", "")
-                grade_value = float(match.group(2))
+            logger.debug(f"Found {len(attr_names)} attributes")
 
-                # Normalize grade name
-                if "athleticism" in grade_name.lower():
-                    grades["Athleticism"] = grade_value
-                elif "size" in grade_name.lower():
-                    grades["Size"] = grade_value
-                elif "defense" in grade_name.lower():
-                    grades["Defense"] = grade_value
-                elif "rebound" in grade_name.lower():
-                    grades["Rebounding"] = grade_value
-                elif "jump" in grade_name.lower() or "shot" in grade_name.lower():
-                    grades["JumpShot"] = grade_value
-                elif "nba" in grade_name.lower() and "ready" in grade_name.lower():
-                    grades["NBAReady"] = grade_value
-                elif "overall" in grade_name.lower():
-                    grades["overall"] = grade_value
+            for name_elem, value_elem in zip(attr_names, attr_values):
+                attr_name = name_elem.text.strip().replace(" ", "")
+                attr_value = value_elem.text.strip()
 
-        # Pattern 2: Look for data attributes
-        for grade_name in grades.keys():
-            attr_name = f"data-{grade_name.lower()}"
-            element = soup.find(attrs={attr_name: True})
-            if element:
-                try:
-                    grades[grade_name] = float(element[attr_name])
-                except (ValueError, KeyError):
-                    pass
+                logger.debug(f"Processing attribute: {attr_name} = {attr_value}")
 
-        logger.info(f"Extracted grades: {grades}")
+                # Map HTML attribute names to our keys
+                # Remove spaces for comparison
+                attr_name_clean = attr_name.replace(" ", "").lower()
 
-    except Exception as e:
-        logger.warning(f"Error extracting grades: {e}")
+                if attr_name_clean == "athleticism":
+                    grades["Athleticism"] = float(attr_value)
+                elif attr_name_clean == "size":
+                    grades["Size"] = float(attr_value)
+                elif attr_name_clean == "defense":
+                    grades["Defense"] = float(attr_value)
+                elif attr_name_clean == "strength":
+                    grades["Strength"] = float(attr_value)
+                elif attr_name_clean == "quickness":
+                    grades["Quickness"] = float(attr_value)
+                elif attr_name_clean == "leadership":
+                    grades["Leadership"] = float(attr_value)
+                elif attr_name_clean in ["jumpshot", "jump shot"]:
+                    grades["JumpShot"] = float(attr_value)
+                elif attr_name_clean in ["nbaready", "nba ready"]:
+                    grades["NBAReady"] = float(attr_value)
 
+    except (AttributeError, ValueError) as e:
+        logger.debug(f"Could not extract attribute grades: {e}")
+
+    logger.info(f"Extracted grades: {grades}")
     return grades

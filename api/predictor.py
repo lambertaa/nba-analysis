@@ -145,8 +145,17 @@ class NBADraftPredictor:
             Feature array ready for model prediction
         """
         # Preprocess text
-        strengths_clean = self.preprocess_text(data.get("Strengths", ""))
-        weaknesses_clean = self.preprocess_text(data.get("Weaknesses", ""))
+        strengths_raw = data.get("Strengths", "")
+        weaknesses_raw = data.get("Weaknesses", "")
+
+        logger.info(f"Raw strengths length: {len(strengths_raw)} chars")
+        logger.info(f"Raw weaknesses length: {len(weaknesses_raw)} chars")
+
+        strengths_clean = self.preprocess_text(strengths_raw)
+        weaknesses_clean = self.preprocess_text(weaknesses_raw)
+
+        logger.info(f"Cleaned strengths: '{strengths_clean[:100]}...'")
+        logger.info(f"Cleaned weaknesses: '{weaknesses_clean[:100]}...'")
 
         # Vectorize text
         str_features = self.vectorizer_strengths.transform([strengths_clean])
@@ -156,10 +165,21 @@ class NBADraftPredictor:
         numerical_values = []
         for feat in self.numerical_features:
             value = data.get(feat)
-            # Handle None/missing values
-            numerical_values.append(value if value is not None else 0.0)
+            # Handle None/missing values - default to 0.0
+            if value is None or (isinstance(value, float) and np.isnan(value)):
+                numerical_values.append(0.0)
+            else:
+                numerical_values.append(float(value))
 
-        numerical_array = np.array(numerical_values).reshape(1, -1)
+        numerical_array = np.array(numerical_values, dtype=np.float64).reshape(1, -1)
+
+        # Debug: log feature counts
+        logger.info(f"Strengths features: {str_features.shape[1]}")
+        logger.info(f"Weaknesses features: {weak_features.shape[1]}")
+        logger.info(
+            f"Numerical features: {numerical_array.shape[1]} (expected: {len(self.numerical_features)})"
+        )
+        logger.info(f"Numerical values: {numerical_values}")
 
         # Combine features (text + numerical)
         from scipy.sparse import hstack
@@ -234,13 +254,24 @@ class NBADraftPredictor:
         # Get indices of non-zero contributions
         nonzero_indices = np.where(feature_values != 0)[0]
 
+        logger.info(f"Total features: {len(feature_values)}")
+        logger.info(f"Non-zero features: {len(nonzero_indices)}")
+        logger.info(
+            f"Feature names loaded: {len(self.feature_names) if self.feature_names else 0}"
+        )
+
         if len(nonzero_indices) == 0:
+            logger.warning("No non-zero features found!")
             return {}, {}
 
         # Get top positive and negative contributions
         nonzero_contributions = contributions[nonzero_indices]
         nonzero_feature_names = [
-            self.feature_names[i] if self.feature_names else f"feature_{i}"
+            (
+                self.feature_names[i]
+                if self.feature_names and i < len(self.feature_names)
+                else f"feature_{i}"
+            )
             for i in nonzero_indices
         ]
 

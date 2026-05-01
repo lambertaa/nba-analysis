@@ -7,3 +7,4 @@
 *.xlsx
 *.html
 *.pdf
+*/mlruns/*

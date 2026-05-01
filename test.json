@@ -1,0 +1,21 @@
+{
+    "player_name":"AJ Dybantsa",
+    "prediction":"All-Star",
+    "probability":0.9898372208392128,
+    "confidence":"High",
+    "threshold_used":0.6500000000000001,
+    "top_positive_features":{
+        "overall":61.159527650451984,
+        "Defense":1.5992306819280586,
+        "Strength":0.38286623791930013,
+        "JumpShot":0.17926386711568734,
+        "STR_cover lot ground":0.1575369067682257
+    },
+    "top_negative_features":{
+        "Athleticism":-6.652534450961494,
+        "NBAReady":-4.115971178181434,
+        "Quickness":-3.2503495102940474,
+        "Size":-1.7946663147001929,
+        "Leadership":-0.2388899738220553
+    }
+}
